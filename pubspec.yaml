@@ -7,10 +7,5 @@ homepage: https://github.com/sanket143/id3
 environment:
   sdk: ">=2.1.0 <3.0.0"
 
-dependencies:
-  flutter:
-    sdk: flutter
-
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
+  test: ^1.6.5

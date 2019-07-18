@@ -16,8 +16,7 @@ class MP3Instance {
     this.metaTags = {};
   }
 
-  void parseTags(){
-
+  void parseTags() {
     var _tag = mp3Bytes.sublist(0, 3);
     if (latin1.decode(_tag) == "ID3") {
       print("Supports id3v2");
@@ -37,7 +36,7 @@ class MP3Instance {
         print("Extended id3v2 tags are not supported yet!");
       } else if (unsync) {
         print("Unsync id3v2 tags are not supported yet!");
-      } else if(experimental){
+      } else if (experimental) {
         print("Experimental id3v2 tag");
       }
 
@@ -47,19 +46,20 @@ class MP3Instance {
       int frameSize;
       var cb = 10;
 
-      while(true){
+      while (true) {
         frameHeader = mp3Bytes.sublist(cb, cb + 10);
         frameName = frameHeader.sublist(0, 4);
 
         RegExp exp = new RegExp(r"[A-Z0-9]+");
-        if(latin1.decode(frameName) != exp.stringMatch(latin1.decode(frameName))){
+        if (latin1.decode(frameName) !=
+            exp.stringMatch(latin1.decode(frameName))) {
           break;
         }
 
         frameSize = parseSize(frameHeader.sublist(4, 8));
         frameContent = mp3Bytes.sublist(cb + 10, cb + 10 + frameSize);
 
-        if(FRAMESv2_3[latin1.decode(frameName)] == FRAMESv2_3["APIC"]){
+        if (FRAMESv2_3[latin1.decode(frameName)] == FRAMESv2_3["APIC"]) {
           Map<String, String> apic = {
             "mime": "",
             "textEncoding": frameContent[0].toString(),
@@ -70,8 +70,8 @@ class MP3Instance {
 
           var offset = 0;
 
-          for(int i = 1; i < frameContent.length; i++){
-            if(frameContent[i] == 0){
+          for (int i = 1; i < frameContent.length; i++) {
+            if (frameContent[i] == 0) {
               apic["mime"] = latin1.decode(frameContent.sublist(1, i));
               offset = i;
               break;
@@ -80,9 +80,10 @@ class MP3Instance {
           apic["picType"] = frameContent[++offset].toString();
 
           print(frameContent.sublist(offset, offset + 10));
-          for(int i = offset + 1; i < frameContent.length; i++){
-            if(frameContent[i] == 0){
-              apic["description"] = latin1.decode(frameContent.sublist(offset + 1, i));
+          for (int i = offset + 1; i < frameContent.length; i++) {
+            if (frameContent[i] == 0) {
+              apic["description"] =
+                  latin1.decode(frameContent.sublist(offset + 1, i));
               offset = i;
               break;
             }
@@ -90,9 +91,10 @@ class MP3Instance {
 
           apic["base64"] = base64.encode(frameContent.sublist(offset));
           this.metaTags["APIC"] = apic;
-
         } else {
-          var tag = FRAMESv2_3[latin1.decode(frameName)] != null ? FRAMESv2_3[latin1.decode(frameName)] : latin1.decode(frameName);
+          var tag = FRAMESv2_3[latin1.decode(frameName)] != null
+              ? FRAMESv2_3[latin1.decode(frameName)]
+              : latin1.decode(frameName);
           this.metaTags[tag] = latin1.decode(cleanFrame(frameContent));
         }
 
@@ -120,13 +122,13 @@ int parseSize(List<int> block) {
 }
 
 List<int> cleanFrame(List<int> bytes) {
-  if(bytes.length > 3){
+  if (bytes.length > 3) {
     return bytes.sublist(3);
   } else {
     return bytes;
   }
 }
 
-List<int> removeZeros(List<int> bytes){
+List<int> removeZeros(List<int> bytes) {
   return bytes.where((i) => i != 0).toList();
 }

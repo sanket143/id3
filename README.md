@@ -1,5 +1,5 @@
 # id3
-A pure dart package to extract meta data from mp3 files.
+A cross platform dart package to extract meta data from mp3 files.
 
 This package contains functions that could extract meta tags from mp3
 files that uses ``ID3 tag version 2.3.0`` to store meta data.

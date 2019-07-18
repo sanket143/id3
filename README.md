@@ -1,14 +1,38 @@
 # id3
+A pure dart package to extract meta data from mp3 files.
 
-A new Flutter package project.
+This package contains functions that could extract meta tags from mp3
+files that uses ``ID3 tag version 2.3.0`` to store meta data.
 
-## Getting Started
+## Usage
 
-This project is a starting point for a Dart
-[package](https://flutter.dev/developing-packages/),
-a library module containing code that can be shared easily across
-multiple Flutter or Dart projects.
+```dart
+import 'package:id3/id3.dart';
 
-For help getting started with Flutter, view our 
-[online documentation](https://flutter.dev/docs), which offers tutorials, 
-samples, guidance on mobile development, and a full API reference.
+void main(){
+  MP3Instance mp3instance = new MP3Instance("./file.mp3");
+
+  mp3instance.parseTags();
+  print(mp3instance.getMetaTags());
+}
+
+/// mp3instance.getMetaTags() returns Map<String, dynamic>
+// {
+//   "Title": "SongName",
+//   "Artist": "ArtistName",
+//   "Album": "AlbumName",
+//   "APIC": {
+//     "mime": "image/jpeg",
+//     "textEncoding": "0",
+//     "picType": "0",
+//     "description": "description",
+//     "base64": "AP/Y/+AAEEpGSUYAAQEBAE..."
+//   }
+// }
+```
+
+
+## Support
+
+- [ ] Support ID3v2.2
+- [ ] Support ID3v1

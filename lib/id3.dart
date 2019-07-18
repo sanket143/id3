@@ -37,6 +37,8 @@ class MP3Instance {
         print("Extended id3v2 tags are not supported yet!");
       } else if (unsync) {
         print("Unsync id3v2 tags are not supported yet!");
+      } else if(experimental){
+        print("Experimental id3v2 tag");
       }
 
       List<int> frameHeader;

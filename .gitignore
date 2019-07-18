@@ -20,6 +20,8 @@
 # is commented out by default.
 .vscode/
 
+test/test.dart
+
 # Flutter/Dart/Pub related
 **/doc/api/
 .dart_tool/

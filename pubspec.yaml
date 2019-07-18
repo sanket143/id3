@@ -1,6 +1,6 @@
 name: id3
 description: Extract metatags from mp3 file
-version: 0.0.1
+version: 0.0.2
 author: Sanket Chaudhari<chaudharisanket2000@gmail.com>
 homepage: https://github.com/sanket143/id3
 

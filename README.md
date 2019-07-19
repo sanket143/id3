@@ -12,8 +12,13 @@ import 'package:id3/id3.dart';
 void main(){
   MP3Instance mp3instance = new MP3Instance("./file.mp3");
 
-  mp3instance.parseTags();
-  print(mp3instance.getMetaTags());
+  /// parseTags() returns 
+  // 'true' if successfully parsed
+  // 'false' if was unable to recognize tag so can't be parsed
+
+  if(mp3instance.parseTags()){
+    print(mp3instance.getMetaTags());
+  }
 }
 
 /// mp3instance.getMetaTags() returns Map<String, dynamic>
@@ -34,5 +39,5 @@ void main(){
 
 ## Support
 
-- [ ] Support ID3v2.2
-- [ ] Support ID3v1
+- [] Support ID3v2.2
+- [] Support ID3v1

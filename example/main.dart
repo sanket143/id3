@@ -2,9 +2,9 @@ import 'package:id3/id3.dart';
 
 void main(){
   MP3Instance mp3instance = new MP3Instance("./file.mp3");
-  mp3instance.parseTags();
-
-  print(mp3instance.getMetaTags());
+  if(mp3instance.parseTags()){
+    print(mp3instance.getMetaTags());
+  }
 }
 
 // {

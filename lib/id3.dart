@@ -16,21 +16,20 @@ class MP3Instance {
     this.metaTags = {};
   }
 
-  void parseTags() {
-    var _tag = mp3Bytes.sublist(0, 3);
-    if (latin1.decode(_tag) == "ID3") {
-      print("Supports id3v2");
+  bool parseTags() {
+    var _tag;
+    _tag = mp3Bytes.sublist(0, 3);
 
+    if (latin1.decode(_tag) == "ID3") {
       var major_v = mp3Bytes[3];
       var revision_v = mp3Bytes[4];
-
       var flag = mp3Bytes[5];
-
-      print("v2.$major_v.$revision_v");
 
       var unsync = (0x40 & flag != 0);
       var extended = (0x20 & flag != 0);
       var experimental = (0x10 & flag != 0);
+
+      this.metaTags["Version"] = "v2.$major_v.$revision_v";
 
       if (extended) {
         print("Extended id3v2 tags are not supported yet!");
@@ -44,7 +43,7 @@ class MP3Instance {
       List<int> frameName;
       List<int> frameContent;
       int frameSize;
-      var cb = 10;
+      int cb = 10;
 
       while (true) {
         frameHeader = mp3Bytes.sublist(cb, cb + 10);
@@ -79,7 +78,6 @@ class MP3Instance {
           }
           apic["picType"] = frameContent[++offset].toString();
 
-          print(frameContent.sublist(offset, offset + 10));
           for (int i = offset + 1; i < frameContent.length; i++) {
             if (frameContent[i] == 0) {
               apic["description"] =
@@ -100,9 +98,34 @@ class MP3Instance {
 
         cb += 10 + frameSize;
       }
-    } else {
-      print("ID3v2 Header not found!");
+
+      return true;
     }
+
+    var _header = this.mp3Bytes.sublist(this.mp3Bytes.length - 128, this.mp3Bytes.length);
+    _tag = _header.sublist(0, 3);
+
+    if(latin1.decode(_tag).toLowerCase() == "tag"){
+      this.metaTags["Version"] = "1.0";
+
+      var _title = _header.sublist(3, 33);
+      var _artist = _header.sublist(33, 63);
+      var _album = _header.sublist(63, 93);
+      var _year = _header.sublist(93, 97);
+      var _comment = _header.sublist(97, 127);
+      var _genre = _header[127];
+
+      this.metaTags["Title"] = latin1.decode(_title).trim();
+      this.metaTags["Artist"] = latin1.decode(_artist).trim();
+      this.metaTags["Album"] = latin1.decode(_album).trim();
+      this.metaTags["Year"] = latin1.decode(_year).trim();
+      this.metaTags["Comment"] = latin1.decode(_comment).trim();
+      this.metaTags["Genre"] = GENREv1[_genre];
+
+      return true;
+    }
+
+    return false;
   }
 
   Map<String, dynamic> getMetaTags() {

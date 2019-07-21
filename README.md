@@ -35,4 +35,4 @@ void main(){
 ## Support
 
 - [ ] Support ID3v2.2
-- [ ] Support ID3v1
+- [x] Support ID3v1

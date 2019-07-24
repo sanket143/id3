@@ -2,7 +2,7 @@
 A cross platform dart package to extract meta data from mp3 files.
 
 This package contains functions that could extract meta tags from mp3
-files that uses ``ID3 tag version 2.3.0`` to store meta data.
+files that uses ``ID3 tag version 2.3.0`` and ``ID3 tag version 1`` to store meta data.
 
 ## Usage
 
@@ -40,4 +40,3 @@ void main(){
 ## Support
 
 - [ ] Support ID3v2.2
-- [x] Support ID3v1

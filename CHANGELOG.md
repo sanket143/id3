@@ -1,4 +1,4 @@
-## [0.1.2] - 2019-08-07
+## [0.1.3] - 2019-08-07
 
 * Renamed parseTagsSync to parseTagsSync
 

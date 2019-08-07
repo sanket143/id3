@@ -16,7 +16,7 @@ void main(){
   // 'true' if successfully parsed
   // 'false' if was unable to recognize tag so can't be parsed
 
-  if(mp3instance.parseTags()){
+  if(mp3instance.parseTagsSync()){
     print(mp3instance.getMetaTags());
   }
 }

@@ -1,3 +1,7 @@
+## [0.1.2] - 2019-08-07
+
+* Renamed parseTagsSync to parseTagsSync
+
 ## [0.1.1] - 2019-07-24
 
 * First public release with id3v1 and id3v2.3 support

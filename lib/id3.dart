@@ -16,7 +16,7 @@ class MP3Instance {
     this.metaTags = {};
   }
 
-  bool parseTags() {
+  bool parseTagsSync() {
     var _tag;
     _tag = mp3Bytes.sublist(0, 3);
 

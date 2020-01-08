@@ -1,4 +1,4 @@
-## [0.1.4] - 2020-01-08
+## [0.1.6]- 2020-01-08
 
 * Removed redundant "this" and "new" keyword
 

@@ -29,7 +29,7 @@ class MP3Instance {
       var extended = (0x20 & flag != 0);
       var experimental = (0x10 & flag != 0);
 
-      metaTags['Version'] = "v2.$major_v.$revision_v";
+      metaTags['Version'] = 'v2.$major_v.$revision_v';
 
       if (extended) {
         print('Extended id3v2 tags are not supported yet!');
@@ -43,13 +43,13 @@ class MP3Instance {
       List<int> frameName;
       List<int> frameContent;
       int frameSize;
-      int cb = 10;
+      var cb = 10;
 
       while (true) {
         frameHeader = mp3Bytes.sublist(cb, cb + 10);
         frameName = frameHeader.sublist(0, 4);
 
-        RegExp exp = new RegExp(r"[A-Z0-9]+");
+        var exp = RegExp(r'[A-Z0-9]+');
         if (latin1.decode(frameName) !=
             exp.stringMatch(latin1.decode(frameName))) {
           break;
@@ -59,7 +59,7 @@ class MP3Instance {
         frameContent = mp3Bytes.sublist(cb + 10, cb + 10 + frameSize);
 
         if (FRAMESv2_3[latin1.decode(frameName)] == FRAMESv2_3['APIC']) {
-          Map<String, String> apic = {
+          var apic = {
             'mime': '',
             'textEncoding': frameContent[0].toString(),
             'picType': '',
@@ -69,7 +69,7 @@ class MP3Instance {
 
           var offset = 0;
 
-          for (int i = 1; i < frameContent.length; i++) {
+          for (var i = 1; i < frameContent.length; i++) {
             if (frameContent[i] == 0) {
               apic['mime'] = latin1.decode(frameContent.sublist(1, i));
               offset = i;
@@ -78,7 +78,7 @@ class MP3Instance {
           }
           apic['picType'] = frameContent[++offset].toString();
 
-          for (int i = offset + 1; i < frameContent.length; i++) {
+          for (var i = offset + 1; i < frameContent.length; i++) {
             if (frameContent[i] == 0) {
               apic['description'] =
                   latin1.decode(frameContent.sublist(offset + 1, i));
@@ -88,12 +88,12 @@ class MP3Instance {
           }
 
           apic['base64'] = base64.encode(frameContent.sublist(offset));
-          this.metaTags['APIC'] = apic;
+          metaTags['APIC'] = apic;
         } else {
-          var tag = FRAMESv2_3[latin1.decode(frameName)] != null
-              ? FRAMESv2_3[latin1.decode(frameName)]
-              : latin1.decode(frameName);
-          this.metaTags[tag] = latin1.decode(cleanFrame(frameContent));
+          var tag = FRAMESv2_3[latin1.decode(frameName)] == null
+              ? latin1.decode(frameName)
+              : FRAMESv2_3[latin1.decode(frameName)];
+          metaTags[tag] = latin1.decode(cleanFrame(frameContent));
         }
 
         cb += 10 + frameSize;
@@ -102,11 +102,11 @@ class MP3Instance {
       return true;
     }
 
-    var _header = this.mp3Bytes.sublist(this.mp3Bytes.length - 128, this.mp3Bytes.length);
+    var _header = mp3Bytes.sublist(mp3Bytes.length - 128, mp3Bytes.length);
     _tag = _header.sublist(0, 3);
 
-    if(latin1.decode(_tag).toLowerCase() == 'tag'){
-      this.metaTags['Version'] = '1.0';
+    if (latin1.decode(_tag).toLowerCase() == 'tag') {
+      metaTags['Version'] = '1.0';
 
       var _title = _header.sublist(3, 33);
       var _artist = _header.sublist(33, 63);
@@ -115,12 +115,12 @@ class MP3Instance {
       var _comment = _header.sublist(97, 127);
       var _genre = _header[127];
 
-      this.metaTags['Title'] = latin1.decode(_title).trim();
-      this.metaTags['Artist'] = latin1.decode(_artist).trim();
-      this.metaTags['Album'] = latin1.decode(_album).trim();
-      this.metaTags['Year'] = latin1.decode(_year).trim();
-      this.metaTags['Comment'] = latin1.decode(_comment).trim();
-      this.metaTags['Genre'] = GENREv1[_genre];
+      metaTags['Title'] = latin1.decode(_title).trim();
+      metaTags['Artist'] = latin1.decode(_artist).trim();
+      metaTags['Album'] = latin1.decode(_album).trim();
+      metaTags['Year'] = latin1.decode(_year).trim();
+      metaTags['Comment'] = latin1.decode(_comment).trim();
+      metaTags['Genre'] = GENREv1[_genre];
 
       return true;
     }
@@ -129,7 +129,7 @@ class MP3Instance {
   }
 
   Map<String, dynamic> getMetaTags() {
-    return this.metaTags;
+    return metaTags;
   }
 }
 

@@ -95,7 +95,7 @@ const GENREv1 = [
   'Rock',
   'Techno',
   'Industrial'
-  'Alternative',
+      'Alternative',
   'Ska',
   'Death Metal',
   'Pranks',
@@ -154,5 +154,5 @@ const GENREv1 = [
   'Retro',
   'Musical',
   'Rock ’n’ Roll,'
-  'Hard Rock'
+      'Hard Rock'
 ];

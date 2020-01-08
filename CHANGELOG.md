@@ -1,3 +1,7 @@
+## [0.1.4] - 2020-01-08
+
+* Removed redundant "this" and "new" keyword
+
 ## [0.1.3] - 2019-08-07
 
 * Renamed parseTagsSync to parseTagsSync

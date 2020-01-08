@@ -11,16 +11,16 @@ class MP3Instance {
 
   /// Member Functions
   MP3Instance(String mp3File) {
-    File file = new File(mp3File);
+    var file = File(mp3File);
     mp3Bytes = file.readAsBytesSync();
-    this.metaTags = {};
+    metaTags = {};
   }
 
   bool parseTagsSync() {
     var _tag;
     _tag = mp3Bytes.sublist(0, 3);
 
-    if (latin1.decode(_tag) == "ID3") {
+    if (latin1.decode(_tag) == 'ID3') {
       var major_v = mp3Bytes[3];
       var revision_v = mp3Bytes[4];
       var flag = mp3Bytes[5];
@@ -29,14 +29,14 @@ class MP3Instance {
       var extended = (0x20 & flag != 0);
       var experimental = (0x10 & flag != 0);
 
-      this.metaTags["Version"] = "v2.$major_v.$revision_v";
+      metaTags['Version'] = "v2.$major_v.$revision_v";
 
       if (extended) {
-        print("Extended id3v2 tags are not supported yet!");
+        print('Extended id3v2 tags are not supported yet!');
       } else if (unsync) {
-        print("Unsync id3v2 tags are not supported yet!");
+        print('Unsync id3v2 tags are not supported yet!');
       } else if (experimental) {
-        print("Experimental id3v2 tag");
+        print('Experimental id3v2 tag');
       }
 
       List<int> frameHeader;
@@ -58,37 +58,37 @@ class MP3Instance {
         frameSize = parseSize(frameHeader.sublist(4, 8));
         frameContent = mp3Bytes.sublist(cb + 10, cb + 10 + frameSize);
 
-        if (FRAMESv2_3[latin1.decode(frameName)] == FRAMESv2_3["APIC"]) {
+        if (FRAMESv2_3[latin1.decode(frameName)] == FRAMESv2_3['APIC']) {
           Map<String, String> apic = {
-            "mime": "",
-            "textEncoding": frameContent[0].toString(),
-            "picType": "",
-            "description": "",
-            "base64": ""
+            'mime': '',
+            'textEncoding': frameContent[0].toString(),
+            'picType': '',
+            'description': '',
+            'base64': ''
           };
 
           var offset = 0;
 
           for (int i = 1; i < frameContent.length; i++) {
             if (frameContent[i] == 0) {
-              apic["mime"] = latin1.decode(frameContent.sublist(1, i));
+              apic['mime'] = latin1.decode(frameContent.sublist(1, i));
               offset = i;
               break;
             }
           }
-          apic["picType"] = frameContent[++offset].toString();
+          apic['picType'] = frameContent[++offset].toString();
 
           for (int i = offset + 1; i < frameContent.length; i++) {
             if (frameContent[i] == 0) {
-              apic["description"] =
+              apic['description'] =
                   latin1.decode(frameContent.sublist(offset + 1, i));
               offset = i;
               break;
             }
           }
 
-          apic["base64"] = base64.encode(frameContent.sublist(offset));
-          this.metaTags["APIC"] = apic;
+          apic['base64'] = base64.encode(frameContent.sublist(offset));
+          this.metaTags['APIC'] = apic;
         } else {
           var tag = FRAMESv2_3[latin1.decode(frameName)] != null
               ? FRAMESv2_3[latin1.decode(frameName)]
@@ -105,8 +105,8 @@ class MP3Instance {
     var _header = this.mp3Bytes.sublist(this.mp3Bytes.length - 128, this.mp3Bytes.length);
     _tag = _header.sublist(0, 3);
 
-    if(latin1.decode(_tag).toLowerCase() == "tag"){
-      this.metaTags["Version"] = "1.0";
+    if(latin1.decode(_tag).toLowerCase() == 'tag'){
+      this.metaTags['Version'] = '1.0';
 
       var _title = _header.sublist(3, 33);
       var _artist = _header.sublist(33, 63);
@@ -115,12 +115,12 @@ class MP3Instance {
       var _comment = _header.sublist(97, 127);
       var _genre = _header[127];
 
-      this.metaTags["Title"] = latin1.decode(_title).trim();
-      this.metaTags["Artist"] = latin1.decode(_artist).trim();
-      this.metaTags["Album"] = latin1.decode(_album).trim();
-      this.metaTags["Year"] = latin1.decode(_year).trim();
-      this.metaTags["Comment"] = latin1.decode(_comment).trim();
-      this.metaTags["Genre"] = GENREv1[_genre];
+      this.metaTags['Title'] = latin1.decode(_title).trim();
+      this.metaTags['Artist'] = latin1.decode(_artist).trim();
+      this.metaTags['Album'] = latin1.decode(_album).trim();
+      this.metaTags['Year'] = latin1.decode(_year).trim();
+      this.metaTags['Comment'] = latin1.decode(_comment).trim();
+      this.metaTags['Genre'] = GENREv1[_genre];
 
       return true;
     }

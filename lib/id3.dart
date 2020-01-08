@@ -90,9 +90,7 @@ class MP3Instance {
           apic['base64'] = base64.encode(frameContent.sublist(offset));
           metaTags['APIC'] = apic;
         } else {
-          var tag = FRAMESv2_3[latin1.decode(frameName)] == null
-              ? latin1.decode(frameName)
-              : FRAMESv2_3[latin1.decode(frameName)];
+          var tag = FRAMESv2_3[latin1.decode(frameName)] ?? latin1.decode(frameName);
           metaTags[tag] = latin1.decode(cleanFrame(frameContent));
         }
 

@@ -144,10 +144,14 @@ int parseSize(List<int> block) {
 }
 
 List<int> cleanFrame(List<int> bytes) {
-  if (bytes.length > 3) {
-    return bytes.sublist(3);
+  List<int> temp = new List<int>.from(bytes);
+
+  temp.removeWhere((item) => item < 1); 
+
+  if (temp.length > 3) {
+    return temp.sublist(3);
   } else {
-    return bytes;
+    return temp;
   }
 }
 

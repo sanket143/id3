@@ -5,6 +5,130 @@ import 'dart:convert';
 
 import 'src/const.dart';
 
+class MP3ParserException implements Exception {
+  String cause;
+  MP3ParserException(this.cause);
+  String toString() {
+    return this.cause;
+  }
+}
+class _MP3FrameParser {
+  List<int> buffer;
+  int pos = 0;
+  int lastEncoding = 0x00; // default to latin1
+  _MP3FrameParser(this.buffer);
+  List<int> readUntilTerminator(List<int> terminator, {bool aligned = false}) {
+    if (remainingBytes == 0) {
+      return [];
+    }
+    for (int i = pos; i < buffer.length - (terminator.length - 1); i += (aligned ? terminator.length : 1)) {
+      bool foundTerminator = true;
+      for (int j = 0; j < terminator.length; j++) {
+        if (buffer[i + j] != terminator[j]) {
+          foundTerminator = false;
+          break;
+        }
+      }
+      if (foundTerminator) {
+        final start = pos;
+        pos = i + terminator.length;
+        return buffer.sublist(start, pos - terminator.length);
+      }
+    }
+    throw MP3ParserException("Did not find terminator $terminator in ${buffer.sublist(pos)}");
+  }
+  String readLatin1String({bool terminator = true}) {
+    return latin1.decode(terminator ? readUntilTerminator([0x00]) : readRemainingBytes());
+  }
+  String readUTF16LEString({bool terminator = true}) {
+    final bytes = terminator ? readUntilTerminator([0x00, 0x00], aligned: true) : readRemainingBytes();
+    final utf16les = List<int>((bytes.length / 2).ceil());
+    for (int i = 0; i < bytes.length; i++) {
+      if (i % 2 == 0) {
+        utf16les[i ~/ 2] = bytes[i];
+      }
+      else {
+        utf16les[i ~/ 2] |= (bytes[i] << 8);
+      }
+    }
+    return String.fromCharCodes(utf16les);
+  }
+  String readUTF16BEString({bool terminator = true}) {
+    final bytes = terminator ? readUntilTerminator([0x00, 0x00]) : readRemainingBytes();
+    final utf16bes = List<int>((bytes.length / 2).ceil());
+    for (int i = 0; i < bytes.length; i++) {
+      if (i % 2 == 0) {
+        utf16bes[i ~/ 2] = (bytes[i] << 8);
+      }
+      else {
+        utf16bes[i ~/ 2] |= bytes[i];
+      }
+    }
+    return String.fromCharCodes(utf16bes);
+  }
+  String readUTF16String({bool terminator = true}) {
+    final bom = buffer.sublist(pos, pos + 2);
+    pos += 2;
+    if (bom[0] == 0xFF && bom[1] == 0xFE) {
+      return readUTF16LEString(terminator: terminator);
+    }
+    else if (bom[0] == 0xFE && bom[1] == 0xFF) {
+      return readUTF16BEString(terminator: terminator);
+    }
+    else if (bom[0] == 0x00 && bom[1] == 0x00) {
+      return "";
+    }
+    else {
+      throw MP3ParserException("Unknown UTF-16 BOM: $bom in ${buffer.sublist(pos - 2)}");
+    }
+  }
+  String readUTF8String({bool terminator = true}) {
+    final bytes = terminator ? readUntilTerminator([0x00]) : readRemainingBytes();
+    return Utf8Decoder().convert(bytes);
+  }
+  void readEncoding() {
+    if (buffer[pos] < 20) {
+      if (lastEncoding == 0x01) {
+        // Do not modify the BOM, 0x01 must apply to each field
+        pos++;
+      }
+      else {
+        lastEncoding = buffer[pos++];
+      }
+    }
+  }
+  String readString({bool terminator = true, checkEncoding: true}) {
+    if (checkEncoding) {
+      readEncoding();
+    }
+    if (lastEncoding == 0x00) {
+      return readLatin1String(terminator: terminator);
+    }
+    else if (lastEncoding == 0x01) {
+      return readUTF16String(terminator: terminator);
+    }
+    else if (lastEncoding == 0x02) {
+      return readUTF16BEString(terminator: terminator);
+    }
+    else if (lastEncoding == 0x03) {
+      return readUTF8String(terminator: terminator);
+    }
+    else {
+      throw MP3ParserException("Unknown Byte-Order Marker: $lastEncoding in $buffer");
+    }
+  }
+  List<int> readBytes(int length) {
+    pos += length;
+    return buffer.sublist(pos - length, pos);
+  }
+  List<int> readRemainingBytes() {
+    return buffer.sublist(pos);
+  }
+  int get remainingBytes {
+    return buffer.length - pos;
+  }
+}
+
 class MP3Instance {
   List<int> mp3Bytes;
   Map<String, dynamic> metaTags;
@@ -55,7 +179,7 @@ class MP3Instance {
           break;
         }
 
-        frameSize = parseSize(frameHeader.sublist(4, 8));
+        frameSize = parseSize(frameHeader.sublist(4, 8), major_v);
         frameContent = mp3Bytes.sublist(cb + 10, cb + 10 + frameSize);
 
         if (FRAMESv2_3[latin1.decode(frameName)] == FRAMESv2_3['APIC']) {
@@ -67,32 +191,58 @@ class MP3Instance {
             'base64': ''
           };
 
-          var offset = 0;
-
-          for (var i = 1; i < frameContent.length; i++) {
-            if (frameContent[i] == 0) {
-              apic['mime'] = latin1.decode(frameContent.sublist(1, i));
-              offset = i;
-              break;
-            }
-          }
-          apic['picType'] = frameContent[++offset].toString();
-
-          for (var i = offset + 1; i < frameContent.length; i++) {
-            if (frameContent[i] == 0) {
-              apic['description'] =
-                  latin1.decode(frameContent.sublist(offset + 1, i));
-              offset = i;
-              break;
-            }
-          }
-
-          apic['base64'] = base64.encode(frameContent.sublist(offset));
+          final frame = _MP3FrameParser(frameContent);
+          frame.readEncoding();
+          apic['mime'] = frame.readLatin1String();
+          apic['description'] = frame.readString();
+          apic['base64'] = base64.encode(frame.readRemainingBytes());
           metaTags['APIC'] = apic;
+        } else if (FRAMESv2_3[latin1.decode(frameName)] == FRAMESv2_3['USLT']) {
+          final frame = _MP3FrameParser(frameContent);
+          frame.readEncoding();
+          final language = latin1.decode(frame.readBytes(3));
+          String contentDescriptor;
+          try {
+            contentDescriptor = frame.readString();
+          }
+          on MP3ParserException {
+            contentDescriptor = frame.readString(terminator: false);
+          }
+          final lyrics = (frame.remainingBytes > 0) ? frame.readString(terminator: false) : contentDescriptor;
+          if (frame.remainingBytes == 0) {
+            contentDescriptor = '';
+          }
+          metaTags['USLT'] = {
+            'language': language,
+            'contentDescriptor': contentDescriptor,
+            'lyrics': lyrics
+          };
+        } else if (FRAMESv2_3[latin1.decode(frameName)] == FRAMESv2_3['WXXX']) {
+            final frame = _MP3FrameParser(frameContent);
+            metaTags['WXXX'] = {
+              'description': frame.readString(),
+              'url': frame.readLatin1String(terminator: false)
+            };
+        } else if (FRAMESv2_3[latin1.decode(frameName)] == FRAMESv2_3['COMM']) {
+            final frame = _MP3FrameParser(frameContent);
+            frame.readEncoding();
+            final language = latin1.decode(frame.readBytes(3));
+            final shortDescription = frame.readString(checkEncoding: false);
+            final text = frame.readString(terminator: false, checkEncoding: false);
+            if (metaTags['COMM'] == null) {
+              metaTags['COMM'] = {};
+              if (metaTags['COMM'][language] == null) {
+                metaTags['COMM'][language] = {};
+              }
+            }
+            metaTags['COMM'][language][shortDescription] = text;
+        } else if (FRAMESv2_3[latin1.decode(frameName)] == FRAMESv2_3['MCDI'] || FRAMESv2_3[latin1.decode(frameName)] == FRAMESv2_3['RVAD']) {
+          // Binary data
+		  metaTags[FRAMESv2_3[latin1.decode(frameName)] ?? latin1.decode(frameName)] = frameContent;
         } else {
           var tag =
               FRAMESv2_3[latin1.decode(frameName)] ?? latin1.decode(frameName);
-          metaTags[tag] = latin1.decode(cleanFrame(frameContent));
+          metaTags[tag] = _MP3FrameParser(frameContent).readString(terminator: false);
         }
 
         cb += 10 + frameSize;
@@ -132,13 +282,25 @@ class MP3Instance {
   }
 }
 
-int parseSize(List<int> block) {
+int parseSize(List<int> block, int major_v) {
   assert(block.length == 4);
 
-  var len = block[0] << 24;
-  len += block[1] << 16;
-  len += block[2] << 8;
-  len += block[3];
+  int len;
+  if (major_v == 4) {
+    len = block[0] << 21;
+    len += block[1] << 14;
+    len += block[2] << 7;
+    len += block[3];
+  }
+  else if (major_v == 3) {
+    len = block[0] << 24;
+    len += block[1] << 16;
+    len += block[2] << 8;
+    len += block[3];
+  }
+  else {
+    throw MP3ParserException("Unknown major version $major_v");
+  }
 
   return len;
 }

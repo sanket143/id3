@@ -12,6 +12,7 @@ class MP3ParserException implements Exception {
     return this.cause;
   }
 }
+
 class _MP3FrameParser {
   List<int> buffer;
   int pos = 0;
@@ -21,7 +22,9 @@ class _MP3FrameParser {
     if (remainingBytes == 0) {
       return [];
     }
-    for (int i = pos; i < buffer.length - (terminator.length - 1); i += (aligned ? terminator.length : 1)) {
+    for (int i = pos;
+        i < buffer.length - (terminator.length - 1);
+        i += (aligned ? terminator.length : 1)) {
       bool foundTerminator = true;
       for (int j = 0; j < terminator.length; j++) {
         if (buffer[i + j] != terminator[j]) {
@@ -35,103 +38,115 @@ class _MP3FrameParser {
         return buffer.sublist(start, pos - terminator.length);
       }
     }
-    throw MP3ParserException("Did not find terminator $terminator in ${buffer.sublist(pos)}");
+    throw MP3ParserException(
+        "Did not find terminator $terminator in ${buffer.sublist(pos)}");
   }
+
   String readLatin1String({bool terminator = true}) {
-    return latin1.decode(terminator ? readUntilTerminator([0x00]) : readRemainingBytes());
+    return latin1.decode(
+        terminator ? readUntilTerminator([0x00]) : readRemainingBytes());
   }
+
   String readUTF16LEString({bool terminator = true}) {
-    final bytes = terminator ? readUntilTerminator([0x00, 0x00], aligned: true) : readRemainingBytes();
-    final utf16les = List<int>((bytes.length / 2).ceil());
+    final bytes = terminator
+        ? readUntilTerminator([0x00, 0x00], aligned: true)
+        : readRemainingBytes();
+    // final utf16les = List<int?>((bytes.length / 2).ceil());
+    final utf16les = List.generate((bytes.length / 2).ceil(), (index) => 0);
+
     for (int i = 0; i < bytes.length; i++) {
       if (i % 2 == 0) {
         utf16les[i ~/ 2] = bytes[i];
-      }
-      else {
+      } else {
         utf16les[i ~/ 2] |= (bytes[i] << 8);
       }
     }
-    return String.fromCharCodes(utf16les);
+    return String.fromCharCodes(utf16les as Iterable<int>);
   }
+
   String readUTF16BEString({bool terminator = true}) {
-    final bytes = terminator ? readUntilTerminator([0x00, 0x00]) : readRemainingBytes();
-    final utf16bes = List<int>((bytes.length / 2).ceil());
+    final bytes =
+        terminator ? readUntilTerminator([0x00, 0x00]) : readRemainingBytes();
+    // final utf16bes = List<int?>((bytes.length / 2).ceil());
+    final utf16bes = List.generate((bytes.length / 2).ceil(), (index) => 0);
+
     for (int i = 0; i < bytes.length; i++) {
       if (i % 2 == 0) {
         utf16bes[i ~/ 2] = (bytes[i] << 8);
-      }
-      else {
+      } else {
         utf16bes[i ~/ 2] |= bytes[i];
       }
     }
-    return String.fromCharCodes(utf16bes);
+    return String.fromCharCodes(utf16bes as Iterable<int>);
   }
+
   String readUTF16String({bool terminator = true}) {
     final bom = buffer.sublist(pos, pos + 2);
     pos += 2;
     if (bom[0] == 0xFF && bom[1] == 0xFE) {
       return readUTF16LEString(terminator: terminator);
-    }
-    else if (bom[0] == 0xFE && bom[1] == 0xFF) {
+    } else if (bom[0] == 0xFE && bom[1] == 0xFF) {
       return readUTF16BEString(terminator: terminator);
-    }
-    else if (bom[0] == 0x00 && bom[1] == 0x00) {
+    } else if (bom[0] == 0x00 && bom[1] == 0x00) {
       return "";
-    }
-    else {
-      throw MP3ParserException("Unknown UTF-16 BOM: $bom in ${buffer.sublist(pos - 2)}");
+    } else {
+      throw MP3ParserException(
+          "Unknown UTF-16 BOM: $bom in ${buffer.sublist(pos - 2)}");
     }
   }
+
   String readUTF8String({bool terminator = true}) {
-    final bytes = terminator ? readUntilTerminator([0x00]) : readRemainingBytes();
+    final bytes =
+        terminator ? readUntilTerminator([0x00]) : readRemainingBytes();
     return Utf8Decoder().convert(bytes);
   }
+
   void readEncoding() {
     if (buffer[pos] < 20) {
       if (lastEncoding == 0x01) {
         // Do not modify the BOM, 0x01 must apply to each field
         pos++;
-      }
-      else {
+      } else {
         lastEncoding = buffer[pos++];
       }
     }
   }
+
   String readString({bool terminator = true, checkEncoding: true}) {
     if (checkEncoding) {
       readEncoding();
     }
     if (lastEncoding == 0x00) {
       return readLatin1String(terminator: terminator);
-    }
-    else if (lastEncoding == 0x01) {
+    } else if (lastEncoding == 0x01) {
       return readUTF16String(terminator: terminator);
-    }
-    else if (lastEncoding == 0x02) {
+    } else if (lastEncoding == 0x02) {
       return readUTF16BEString(terminator: terminator);
-    }
-    else if (lastEncoding == 0x03) {
+    } else if (lastEncoding == 0x03) {
       return readUTF8String(terminator: terminator);
-    }
-    else {
-      throw MP3ParserException("Unknown Byte-Order Marker: $lastEncoding in $buffer");
+    } else {
+      throw MP3ParserException(
+          "Unknown Byte-Order Marker: $lastEncoding in $buffer");
     }
   }
+
   List<int> readBytes(int length) {
     pos += length;
     return buffer.sublist(pos - length, pos);
   }
+
   List<int> readRemainingBytes() {
     return buffer.sublist(pos);
   }
+
   int get remainingBytes {
     return buffer.length - pos;
   }
 }
 
 class MP3Instance {
-  List<int> mp3Bytes;
-  Map<String, dynamic> metaTags;
+  late List<int> mp3Bytes;
+  Map<String, dynamic>? metaTags;
 
   /// Member Functions
   MP3Instance(String mp3File) {
@@ -153,7 +168,7 @@ class MP3Instance {
       var extended = (0x20 & flag != 0);
       var experimental = (0x10 & flag != 0);
 
-      metaTags['Version'] = 'v2.$major_v.$revision_v';
+      metaTags!['Version'] = 'v2.$major_v.$revision_v';
 
       if (extended) {
         print('Extended id3v2 tags are not supported yet!');
@@ -196,7 +211,7 @@ class MP3Instance {
           apic['mime'] = frame.readLatin1String();
           apic['description'] = frame.readString();
           apic['base64'] = base64.encode(frame.readRemainingBytes());
-          metaTags['APIC'] = apic;
+          metaTags!['APIC'] = apic;
         } else if (FRAMESv2_3[latin1.decode(frameName)] == FRAMESv2_3['USLT']) {
           final frame = _MP3FrameParser(frameContent);
           frame.readEncoding();
@@ -204,45 +219,50 @@ class MP3Instance {
           String contentDescriptor;
           try {
             contentDescriptor = frame.readString();
-          }
-          on MP3ParserException {
+          } on MP3ParserException {
             contentDescriptor = frame.readString(terminator: false);
           }
-          final lyrics = (frame.remainingBytes > 0) ? frame.readString(terminator: false) : contentDescriptor;
+          final lyrics = (frame.remainingBytes > 0)
+              ? frame.readString(terminator: false)
+              : contentDescriptor;
           if (frame.remainingBytes == 0) {
             contentDescriptor = '';
           }
-          metaTags['USLT'] = {
+          metaTags!['USLT'] = {
             'language': language,
             'contentDescriptor': contentDescriptor,
             'lyrics': lyrics
           };
         } else if (FRAMESv2_3[latin1.decode(frameName)] == FRAMESv2_3['WXXX']) {
-            final frame = _MP3FrameParser(frameContent);
-            metaTags['WXXX'] = {
-              'description': frame.readString(),
-              'url': frame.readLatin1String(terminator: false)
-            };
+          final frame = _MP3FrameParser(frameContent);
+          metaTags!['WXXX'] = {
+            'description': frame.readString(),
+            'url': frame.readLatin1String(terminator: false)
+          };
         } else if (FRAMESv2_3[latin1.decode(frameName)] == FRAMESv2_3['COMM']) {
-            final frame = _MP3FrameParser(frameContent);
-            frame.readEncoding();
-            final language = latin1.decode(frame.readBytes(3));
-            final shortDescription = frame.readString(checkEncoding: false);
-            final text = frame.readString(terminator: false, checkEncoding: false);
-            if (metaTags['COMM'] == null) {
-              metaTags['COMM'] = {};
-              if (metaTags['COMM'][language] == null) {
-                metaTags['COMM'][language] = {};
-              }
+          final frame = _MP3FrameParser(frameContent);
+          frame.readEncoding();
+          final language = latin1.decode(frame.readBytes(3));
+          final shortDescription = frame.readString(checkEncoding: false);
+          final text =
+              frame.readString(terminator: false, checkEncoding: false);
+          if (metaTags!['COMM'] == null) {
+            metaTags!['COMM'] = {};
+            if (metaTags!['COMM'][language] == null) {
+              metaTags!['COMM'][language] = {};
             }
-            metaTags['COMM'][language][shortDescription] = text;
-        } else if (FRAMESv2_3[latin1.decode(frameName)] == FRAMESv2_3['MCDI'] || FRAMESv2_3[latin1.decode(frameName)] == FRAMESv2_3['RVAD']) {
+          }
+          metaTags!['COMM'][language][shortDescription] = text;
+        } else if (FRAMESv2_3[latin1.decode(frameName)] == FRAMESv2_3['MCDI'] ||
+            FRAMESv2_3[latin1.decode(frameName)] == FRAMESv2_3['RVAD']) {
           // Binary data
-		  metaTags[FRAMESv2_3[latin1.decode(frameName)] ?? latin1.decode(frameName)] = frameContent;
+          metaTags![FRAMESv2_3[latin1.decode(frameName)] ??
+              latin1.decode(frameName)] = frameContent;
         } else {
           var tag =
               FRAMESv2_3[latin1.decode(frameName)] ?? latin1.decode(frameName);
-          metaTags[tag] = _MP3FrameParser(frameContent).readString(terminator: false);
+          metaTags![tag] =
+              _MP3FrameParser(frameContent).readString(terminator: false);
         }
 
         cb += 10 + frameSize;
@@ -255,7 +275,7 @@ class MP3Instance {
     _tag = _header.sublist(0, 3);
 
     if (latin1.decode(_tag).toLowerCase() == 'tag') {
-      metaTags['Version'] = '1.0';
+      metaTags!['Version'] = '1.0';
 
       var _title = _header.sublist(3, 33);
       var _artist = _header.sublist(33, 63);
@@ -264,12 +284,12 @@ class MP3Instance {
       var _comment = _header.sublist(97, 127);
       var _genre = _header[127];
 
-      metaTags['Title'] = latin1.decode(_title).trim();
-      metaTags['Artist'] = latin1.decode(_artist).trim();
-      metaTags['Album'] = latin1.decode(_album).trim();
-      metaTags['Year'] = latin1.decode(_year).trim();
-      metaTags['Comment'] = latin1.decode(_comment).trim();
-      metaTags['Genre'] = GENREv1[_genre];
+      metaTags!['Title'] = latin1.decode(_title).trim();
+      metaTags!['Artist'] = latin1.decode(_artist).trim();
+      metaTags!['Album'] = latin1.decode(_album).trim();
+      metaTags!['Year'] = latin1.decode(_year).trim();
+      metaTags!['Comment'] = latin1.decode(_comment).trim();
+      metaTags!['Genre'] = GENREv1[_genre];
 
       return true;
     }
@@ -277,7 +297,7 @@ class MP3Instance {
     return false;
   }
 
-  Map<String, dynamic> getMetaTags() {
+  Map<String, dynamic>? getMetaTags() {
     return metaTags;
   }
 }
@@ -291,14 +311,12 @@ int parseSize(List<int> block, int major_v) {
     len += block[1] << 14;
     len += block[2] << 7;
     len += block[3];
-  }
-  else if (major_v == 3) {
+  } else if (major_v == 3) {
     len = block[0] << 24;
     len += block[1] << 16;
     len += block[2] << 8;
     len += block[3];
-  }
-  else {
+  } else {
     throw MP3ParserException("Unknown major version $major_v");
   }
 
@@ -308,7 +326,7 @@ int parseSize(List<int> block, int major_v) {
 List<int> cleanFrame(List<int> bytes) {
   List<int> temp = new List<int>.from(bytes);
 
-  temp.removeWhere((item) => item < 1); 
+  temp.removeWhere((item) => item < 1);
 
   if (temp.length > 3) {
     return temp.sublist(3);

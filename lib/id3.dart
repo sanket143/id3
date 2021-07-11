@@ -18,7 +18,7 @@ class _MP3FrameParser {
   int pos = 0;
   int lastEncoding = 0x00; // default to latin1
   _MP3FrameParser(this.buffer);
-  List<int> readUntilTerminator(List<int> terminator, {bool aligned = false}) {
+  List<int> readUntilTerminator(List<int> terminator, {bool aligned = false, bool terminatorMandatory = true}) {
     if (remainingBytes == 0) {
       return [];
     }
@@ -38,19 +38,21 @@ class _MP3FrameParser {
         return buffer.sublist(start, pos - terminator.length);
       }
     }
-    throw MP3ParserException(
-        "Did not find terminator $terminator in ${buffer.sublist(pos)}");
+    if (terminatorMandatory) {
+      throw MP3ParserException(
+          "Did not find terminator $terminator in ${buffer.sublist(pos)}");
+    }
+    else {
+      return buffer.sublist(pos);
+    }
   }
 
   String readLatin1String({bool terminator = true}) {
-    return latin1.decode(
-        terminator ? readUntilTerminator([0x00]) : readRemainingBytes());
+    return latin1.decode(readUntilTerminator([0x00], terminatorMandatory: terminator));
   }
 
   String readUTF16LEString({bool terminator = true}) {
-    final bytes = terminator
-        ? readUntilTerminator([0x00, 0x00], aligned: true)
-        : readRemainingBytes();
+    final bytes = readUntilTerminator([0x00, 0x00], aligned: true, terminatorMandatory: terminator);
     // final utf16les = List<int?>((bytes.length / 2).ceil());
     final utf16les = List.generate((bytes.length / 2).ceil(), (index) => 0);
 
@@ -61,12 +63,11 @@ class _MP3FrameParser {
         utf16les[i ~/ 2] |= (bytes[i] << 8);
       }
     }
-    return String.fromCharCodes(utf16les as Iterable<int>);
+    return String.fromCharCodes(utf16les);
   }
 
   String readUTF16BEString({bool terminator = true}) {
-    final bytes =
-        terminator ? readUntilTerminator([0x00, 0x00]) : readRemainingBytes();
+    final bytes = readUntilTerminator([0x00, 0x00], terminatorMandatory: terminator);
     // final utf16bes = List<int?>((bytes.length / 2).ceil());
     final utf16bes = List.generate((bytes.length / 2).ceil(), (index) => 0);
 
@@ -82,22 +83,23 @@ class _MP3FrameParser {
 
   String readUTF16String({bool terminator = true}) {
     final bom = buffer.sublist(pos, pos + 2);
-    pos += 2;
     if (bom[0] == 0xFF && bom[1] == 0xFE) {
+      pos += 2;
       return readUTF16LEString(terminator: terminator);
     } else if (bom[0] == 0xFE && bom[1] == 0xFF) {
+      pos += 2;
       return readUTF16BEString(terminator: terminator);
     } else if (bom[0] == 0x00 && bom[1] == 0x00) {
+      pos += 2;
       return "";
     } else {
       throw MP3ParserException(
-          "Unknown UTF-16 BOM: $bom in ${buffer.sublist(pos - 2)}");
+          "Unknown UTF-16 BOM: $bom in ${buffer.sublist(pos)}");
     }
   }
 
   String readUTF8String({bool terminator = true}) {
-    final bytes =
-        terminator ? readUntilTerminator([0x00]) : readRemainingBytes();
+    final bytes = readUntilTerminator([0x00], terminatorMandatory: terminator);
     return Utf8Decoder().convert(bytes);
   }
 
@@ -112,9 +114,12 @@ class _MP3FrameParser {
     }
   }
 
-  String readString({bool terminator = true, checkEncoding: true}) {
+  String readString({bool terminator = true, bool checkEncoding: true}) {
     if (checkEncoding) {
       readEncoding();
+    }
+    if (pos == buffer.length) {
+      return '';  
     }
     if (lastEncoding == 0x00) {
       return readLatin1String(terminator: terminator);
@@ -215,13 +220,9 @@ class MP3Instance {
           frame.readEncoding();
           final language = latin1.decode(frame.readBytes(3));
           String contentDescriptor;
-          try {
-            contentDescriptor = frame.readString();
-          } on MP3ParserException {
-            contentDescriptor = frame.readString(terminator: false);
-          }
+          contentDescriptor = frame.readString(checkEncoding: false);
           final lyrics = (frame.remainingBytes > 0)
-              ? frame.readString(terminator: false)
+              ? frame.readString(checkEncoding: false, terminator: false)
               : contentDescriptor;
           if (frame.remainingBytes == 0) {
             contentDescriptor = '';

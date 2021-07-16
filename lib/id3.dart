@@ -18,7 +18,8 @@ class _MP3FrameParser {
   int pos = 0;
   int lastEncoding = 0x00; // default to latin1
   _MP3FrameParser(this.buffer);
-  List<int> readUntilTerminator(List<int> terminator, {bool aligned = false, bool terminatorMandatory = true}) {
+  List<int> readUntilTerminator(List<int> terminator,
+      {bool aligned = false, bool terminatorMandatory = true}) {
     if (remainingBytes == 0) {
       return [];
     }
@@ -41,18 +42,19 @@ class _MP3FrameParser {
     if (terminatorMandatory) {
       throw MP3ParserException(
           "Did not find terminator $terminator in ${buffer.sublist(pos)}");
-    }
-    else {
+    } else {
       return buffer.sublist(pos);
     }
   }
 
   String readLatin1String({bool terminator = true}) {
-    return latin1.decode(readUntilTerminator([0x00], terminatorMandatory: terminator));
+    return latin1
+        .decode(readUntilTerminator([0x00], terminatorMandatory: terminator));
   }
 
   String readUTF16LEString({bool terminator = true}) {
-    final bytes = readUntilTerminator([0x00, 0x00], aligned: true, terminatorMandatory: terminator);
+    final bytes = readUntilTerminator([0x00, 0x00],
+        aligned: true, terminatorMandatory: terminator);
     // final utf16les = List<int?>((bytes.length / 2).ceil());
     final utf16les = List.generate((bytes.length / 2).ceil(), (index) => 0);
 
@@ -67,7 +69,8 @@ class _MP3FrameParser {
   }
 
   String readUTF16BEString({bool terminator = true}) {
-    final bytes = readUntilTerminator([0x00, 0x00], terminatorMandatory: terminator);
+    final bytes =
+        readUntilTerminator([0x00, 0x00], terminatorMandatory: terminator);
     // final utf16bes = List<int?>((bytes.length / 2).ceil());
     final utf16bes = List.generate((bytes.length / 2).ceil(), (index) => 0);
 
@@ -119,7 +122,7 @@ class _MP3FrameParser {
       readEncoding();
     }
     if (pos == buffer.length) {
-      return '';  
+      return '';
     }
     if (lastEncoding == 0x00) {
       return readLatin1String(terminator: terminator);

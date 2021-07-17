@@ -1,4 +1,9 @@
-## [0.1.8]- 2020-01-08
+## [1.0.0] - 2021-07-17
+* [API Update](https://github.com/sanket143/id3/pull/10), takes bytes instead of fileName as argument in `MP3Instance`
+* [Fix corrupted album art](https://github.com/sanket143/id3/pull/9) [Thanks to [@moffotman](https://github.com/moffatman)]
+* [Migration to null safety](https://github.com/sanket143/id3/pull/6) [Thanks to [@4-alok](https://github.com/4-alok)]
+
+## [0.1.8] - 2020-01-08
 
 * Removed redundant "this" and "new" keyword
 

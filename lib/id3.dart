@@ -1,6 +1,5 @@
 library id3;
 
-import 'dart:io';
 import 'dart:convert';
 
 import 'src/const.dart';
@@ -157,8 +156,8 @@ class MP3Instance {
   final Map<String, dynamic> metaTags = {};
 
   /// Member Functions
-  MP3Instance(String mp3File) {
-    mp3Bytes = File(mp3File).readAsBytesSync();
+  MP3Instance(List<int> mp3Bytes) {
+    this.mp3Bytes = mp3Bytes;
   }
 
   bool parseTagsSync() {

@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:id3/id3.dart';
 
 void main(){
-  MP3Instance mp3instance = new MP3Instance("./file.mp3");
+  List<int> mp3Bytes = File("./file.mp3").readAsBytesSync(); 
+  MP3Instance mp3instance = new MP3Instance(mp3Bytes);
   if(mp3instance.parseTagsSync()){
     print(mp3instance.getMetaTags());
   }

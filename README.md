@@ -38,7 +38,12 @@ void main(){
 // }
 ```
 
+# Migrate from v0.1 to v1.0
 
-## Support
+- `MP3Instance` used to take filename as string in v0.1, which is updated to take bytes as `List<int>` in v1.0
 
-- [ ] Support ID3v2.2
+```diff
+- MP3Instance mp3instance = new MP3Instance("./file.mp3");
++ List<int> mp3Bytes = File("./file.mp3").readAsBytesSync();
++ MP3Instance mp3instance = new MP3Instance(mp3Bytes);
+```

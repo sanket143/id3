@@ -38,7 +38,7 @@ void main(){
 // }
 ```
 
-# Migrate from v0.1 to v1.0
+# Migrating from v0.1 to v1.0
 
 - `MP3Instance` used to take filename as string in v0.1, which is updated to take bytes as `List<int>` in v1.0
 

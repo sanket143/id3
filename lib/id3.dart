@@ -161,17 +161,17 @@ class MP3Instance {
   }
 
   bool parseTagsSync() {
-    var _tag;
+    List<int> _tag;
     _tag = mp3Bytes.sublist(0, 3);
 
     if (latin1.decode(_tag) == 'ID3') {
-      var major_v = mp3Bytes[3];
-      var revision_v = mp3Bytes[4];
-      var flag = mp3Bytes[5];
+      final int major_v = mp3Bytes[3];
+      final int revision_v = mp3Bytes[4];
+      final int flag = mp3Bytes[5];
 
-      var unsync = (0x40 & flag != 0);
-      var extended = (0x20 & flag != 0);
-      var experimental = (0x10 & flag != 0);
+      final bool unsync = (0x40 & flag != 0);
+      final bool extended = (0x20 & flag != 0);
+      final bool experimental = (0x10 & flag != 0);
 
       metaTags['Version'] = 'v2.$major_v.$revision_v';
 
@@ -183,27 +183,41 @@ class MP3Instance {
         print('Experimental id3v2 tag');
       }
 
-      List<int> frameHeader;
-      List<int> frameName;
-      List<int> frameContent;
-      int frameSize;
-      var cb = 10;
+      int cb = 10;
+
+      Map<String, String> frames_db = FRAMESv2_3;
+      int frameNameLength = 4;
+      int frameSizeLength = 4;
+      int frameTagLength = 2;
+      if (major_v == 2) {
+        frames_db = FRAMESv2_2;
+        frameNameLength = 3;
+        frameSizeLength = 3;
+        frameTagLength = 0;
+      }
+      final int frameHeaderLength =
+          frameNameLength + frameSizeLength + frameTagLength;
 
       while (true) {
-        frameHeader = mp3Bytes.sublist(cb, cb + 10);
-        frameName = frameHeader.sublist(0, 4);
+        final List<int> frameHeader =
+            mp3Bytes.sublist(cb, cb + frameHeaderLength);
+        final List<int> frameName = frameHeader.sublist(0, frameNameLength);
 
-        var exp = RegExp(r'[A-Z0-9]+');
+        final RegExp exp = RegExp(r'[A-Z0-9]+');
         if (latin1.decode(frameName) !=
             exp.stringMatch(latin1.decode(frameName))) {
           break;
         }
 
-        frameSize = parseSize(frameHeader.sublist(4, 8), major_v);
-        frameContent = mp3Bytes.sublist(cb + 10, cb + 10 + frameSize);
+        final int frameSize = parseSize(
+            frameHeader.sublist(
+                frameNameLength, frameNameLength + frameSizeLength),
+            major_v);
+        final List<int> frameContent = mp3Bytes.sublist(
+            cb + frameHeaderLength, cb + frameHeaderLength + frameSize);
 
-        if (FRAMESv2_3[latin1.decode(frameName)] == FRAMESv2_3['APIC']) {
-          var apic = {
+        if (frames_db[latin1.decode(frameName)] == FRAMESv2_3['APIC']) {
+          final Map<String, String> apic = {
             'mime': '',
             'textEncoding': frameContent[0].toString(),
             'picType': '',
@@ -217,7 +231,7 @@ class MP3Instance {
           apic['description'] = frame.readString();
           apic['base64'] = base64.encode(frame.readRemainingBytes());
           metaTags['APIC'] = apic;
-        } else if (FRAMESv2_3[latin1.decode(frameName)] == FRAMESv2_3['USLT']) {
+        } else if (frames_db[latin1.decode(frameName)] == FRAMESv2_3['USLT']) {
           final frame = _MP3FrameParser(frameContent);
           frame.readEncoding();
           final language = latin1.decode(frame.readBytes(3));
@@ -234,13 +248,13 @@ class MP3Instance {
             'contentDescriptor': contentDescriptor,
             'lyrics': lyrics
           };
-        } else if (FRAMESv2_3[latin1.decode(frameName)] == FRAMESv2_3['WXXX']) {
+        } else if (frames_db[latin1.decode(frameName)] == FRAMESv2_3['WXXX']) {
           final frame = _MP3FrameParser(frameContent);
           metaTags['WXXX'] = {
             'description': frame.readString(),
             'url': frame.readLatin1String(terminator: false)
           };
-        } else if (FRAMESv2_3[latin1.decode(frameName)] == FRAMESv2_3['COMM']) {
+        } else if (frames_db[latin1.decode(frameName)] == FRAMESv2_3['COMM']) {
           final frame = _MP3FrameParser(frameContent);
           frame.readEncoding();
           final language = latin1.decode(frame.readBytes(3));
@@ -254,36 +268,37 @@ class MP3Instance {
             }
           }
           metaTags['COMM'][language][shortDescription] = text;
-        } else if (FRAMESv2_3[latin1.decode(frameName)] == FRAMESv2_3['MCDI'] ||
-            FRAMESv2_3[latin1.decode(frameName)] == FRAMESv2_3['RVAD']) {
+        } else if (frames_db[latin1.decode(frameName)] == FRAMESv2_3['MCDI'] ||
+            frames_db[latin1.decode(frameName)] == FRAMESv2_3['RVAD']) {
           // Binary data
-          metaTags[FRAMESv2_3[latin1.decode(frameName)] ??
+          metaTags[frames_db[latin1.decode(frameName)] ??
               latin1.decode(frameName)] = frameContent;
         } else {
-          var tag =
-              FRAMESv2_3[latin1.decode(frameName)] ?? latin1.decode(frameName);
+          final String tag =
+              frames_db[latin1.decode(frameName)] ?? latin1.decode(frameName);
           metaTags[tag] =
               _MP3FrameParser(frameContent).readString(terminator: false);
         }
 
-        cb += 10 + frameSize;
+        cb += frameHeaderLength + frameSize;
       }
 
       return true;
     }
 
-    var _header = mp3Bytes.sublist(mp3Bytes.length - 128, mp3Bytes.length);
+    final List<int> _header =
+        mp3Bytes.sublist(mp3Bytes.length - 128, mp3Bytes.length);
     _tag = _header.sublist(0, 3);
 
     if (latin1.decode(_tag).toLowerCase() == 'tag') {
       metaTags['Version'] = '1.0';
 
-      var _title = _header.sublist(3, 33);
-      var _artist = _header.sublist(33, 63);
-      var _album = _header.sublist(63, 93);
-      var _year = _header.sublist(93, 97);
-      var _comment = _header.sublist(97, 127);
-      var _genre = _header[127];
+      final List<int> _title = _header.sublist(3, 33);
+      final List<int> _artist = _header.sublist(33, 63);
+      final List<int> _album = _header.sublist(63, 93);
+      final List<int> _year = _header.sublist(93, 97);
+      final List<int> _comment = _header.sublist(97, 127);
+      final int _genre = _header[127];
 
       metaTags['Title'] = latin1.decode(_title).trim();
       metaTags['Artist'] = latin1.decode(_artist).trim();
@@ -317,6 +332,10 @@ int parseSize(List<int> block, int major_v) {
     len += block[1] << 16;
     len += block[2] << 8;
     len += block[3];
+  } else if (major_v == 2) {
+    len = block[0] << 16;
+    len += block[1] << 8;
+    len += block[2];
   } else {
     throw MP3ParserException("Unknown major version $major_v");
   }

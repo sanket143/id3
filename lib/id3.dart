@@ -319,20 +319,21 @@ class MP3Instance {
 }
 
 int parseSize(List<int> block, int major_v) {
-  assert(block.length == 4);
-
   int len;
   if (major_v == 4) {
+    assert(block.length == 4);
     len = block[0] << 21;
     len += block[1] << 14;
     len += block[2] << 7;
     len += block[3];
   } else if (major_v == 3) {
+    assert(block.length == 4);
     len = block[0] << 24;
     len += block[1] << 16;
     len += block[2] << 8;
     len += block[3];
   } else if (major_v == 2) {
+    assert(block.length == 3);
     len = block[0] << 16;
     len += block[1] << 8;
     len += block[2];

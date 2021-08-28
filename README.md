@@ -14,7 +14,7 @@ void main(){
   List<int> mp3Bytes = File("./file.mp3").readAsBytesSync();
   MP3Instance mp3instance = new MP3Instance(mp3Bytes);
 
-  /// parseTags() returns 
+  /// parseTagsSync() returns 
   // 'true' if successfully parsed
   // 'false' if was unable to recognize tag so can't be parsed
 

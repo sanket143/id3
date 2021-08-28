@@ -1,3 +1,6 @@
+## [1.0.1] - 2021-08-28
+* [Properly parse ID3v2.2 tags](https://github.com/sanket143/id3/pull/14), with some explicit type notation
+
 ## [1.0.0] - 2021-07-17
 * [API Update](https://github.com/sanket143/id3/pull/10), takes bytes instead of fileName as argument in `MP3Instance`
 * [Fix corrupted album art](https://github.com/sanket143/id3/pull/9) [Thanks to [@moffotman](https://github.com/moffatman)]

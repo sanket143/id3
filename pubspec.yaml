@@ -1,6 +1,6 @@
 name: id3
 description: A cross platform dart package to extract meta data from mp3 files.
-version: 1.0.0
+version: 1.0.1
 homepage: https://github.com/sanket143/id3
 
 environment:

@@ -227,8 +227,15 @@ class MP3Instance {
 
           final frame = _MP3FrameParser(frameContent);
           frame.readEncoding();
-          apic['mime'] = frame.readLatin1String();
-          apic['description'] = frame.readString();
+          // In ID3v2.2 the MIME type is always 3 characters
+          if (major_v == 2) {
+            apic['mime'] = latin1.decode(frame.readBytes(3));
+          }
+          else {
+            apic['mime'] = frame.readLatin1String();
+          }
+          apic['picType'] = PICTYPE[frame.readBytes(1).first] ?? 'Unknown';
+          apic['description'] = frame.readString(checkEncoding: false);
           apic['base64'] = base64.encode(frame.readRemainingBytes());
           metaTags['APIC'] = apic;
         } else if (frames_db[latin1.decode(frameName)] == FRAMESv2_3['USLT']) {

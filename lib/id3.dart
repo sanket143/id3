@@ -230,8 +230,7 @@ class MP3Instance {
           // In ID3v2.2 the MIME type is always 3 characters
           if (major_v == 2) {
             apic['mime'] = latin1.decode(frame.readBytes(3));
-          }
-          else {
+          } else {
             apic['mime'] = frame.readLatin1String();
           }
           apic['picType'] = PICTYPE[frame.readBytes(1).first] ?? 'Unknown';

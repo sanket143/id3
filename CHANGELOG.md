@@ -1,3 +1,8 @@
+## [1.0.2] - 2021-11-08
+* [Parse PicType, fix picture on ID3v2.2](https://github.com/sanket143/id3/pull/19)
+* Welcome [@moffatman](https://github.com/moffatman) as a collaborator
+* [Properly parse ID3v2.2 tags](https://github.com/sanket143/id3/pull/14)
+
 ## [1.0.1] - 2021-08-28
 * [Properly parse ID3v2.2 tags](https://github.com/sanket143/id3/pull/14), with some explicit type notation
 

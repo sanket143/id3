@@ -269,9 +269,9 @@ class MP3Instance {
               frame.readString(terminator: false, checkEncoding: false);
           if (metaTags['COMM'] == null) {
             metaTags['COMM'] = {};
-            if (metaTags['COMM'][language] == null) {
-              metaTags['COMM'][language] = {};
-            }
+          }
+          if (metaTags['COMM'][language] == null) {
+            metaTags['COMM'][language] = {};
           }
           metaTags['COMM'][language][shortDescription] = text;
         } else if (frames_db[latin1.decode(frameName)] == FRAMESv2_3['MCDI'] ||

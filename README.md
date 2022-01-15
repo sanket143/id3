@@ -47,3 +47,5 @@ void main(){
 + List<int> mp3Bytes = File("./file.mp3").readAsBytesSync();
 + MP3Instance mp3instance = new MP3Instance(mp3Bytes);
 ```
+
+### [**Looking for a new maintainer**](https://github.com/sanket143/id3/issues/27)

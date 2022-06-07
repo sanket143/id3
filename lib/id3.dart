@@ -299,19 +299,36 @@ class MP3Instance {
     if (latin1.decode(_tag).toLowerCase() == 'tag') {
       metaTags['Version'] = '1.0';
 
-      final List<int> _title = _header.sublist(3, 33);
-      final List<int> _artist = _header.sublist(33, 63);
-      final List<int> _album = _header.sublist(63, 93);
-      final List<int> _year = _header.sublist(93, 97);
-      final List<int> _comment = _header.sublist(97, 127);
+      final String _title = latin1.decode(removeZeros(_header.sublist(3, 33))).trim();
+      final String _artist = latin1.decode(removeZeros(_header.sublist(33, 63))).trim();
+      final String _album = latin1.decode(removeZeros(_header.sublist(63, 93))).trim();
+      final String _year = latin1.decode(removeZeros(_header.sublist(93, 97))).trim();
+      final String _comment = latin1.decode(removeZeros(_header.sublist(97, 127))).trim();
       final int _genre = _header[127];
 
-      metaTags['Title'] = latin1.decode(_title).trim();
-      metaTags['Artist'] = latin1.decode(_artist).trim();
-      metaTags['Album'] = latin1.decode(_album).trim();
-      metaTags['Year'] = latin1.decode(_year).trim();
-      metaTags['Comment'] = latin1.decode(_comment).trim();
-      metaTags['Genre'] = GENREv1[_genre];
+      if(_title.length > 0) {
+        metaTags['Title'] = _title;
+      }
+
+      if(_artist.length > 0) {
+        metaTags['Artist'] = _artist;
+      }
+
+      if(_album.length > 0) {
+        metaTags['Album'] = _album;
+      }
+
+      if(_year.length > 0) {
+        metaTags['Year'] = _year;
+      }
+
+      if(_comment.length > 0) {
+        metaTags['Comment'] = _comment;
+      }
+
+      if(_genre < GENREv1.length && _genre >= 0) {
+        metaTags['Genre'] = GENREv1[_genre];
+      }
 
       return true;
     }

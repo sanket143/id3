@@ -236,7 +236,10 @@ class MP3Instance {
           apic['picType'] = PICTYPE[frame.readBytes(1).first] ?? 'Unknown';
           apic['description'] = frame.readString(checkEncoding: false);
           apic['base64'] = base64.encode(frame.readRemainingBytes());
-          metaTags['APIC'] = apic;
+          if (!metaTags.containsKey('APIC')) {
+            metaTags['APIC'] = [];
+          }
+          metaTags['APIC'].add(apic);
         } else if (frames_db[latin1.decode(frameName)] == FRAMESv2_3['USLT']) {
           final frame = _MP3FrameParser(frameContent);
           frame.readEncoding();

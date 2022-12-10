@@ -153,7 +153,9 @@ class _MP3FrameParser {
 
 class MP3Instance {
   late final List<int> mp3Bytes;
-  final Map<String, dynamic> metaTags = {};
+  final Map<String, dynamic> metaTags = {
+    "APIC_FRAMES": []
+  };
 
   /// Member Functions
   MP3Instance(List<int> mp3Bytes) {
@@ -236,10 +238,9 @@ class MP3Instance {
           apic['picType'] = PICTYPE[frame.readBytes(1).first] ?? 'Unknown';
           apic['description'] = frame.readString(checkEncoding: false);
           apic['base64'] = base64.encode(frame.readRemainingBytes());
-          if (!metaTags.containsKey('APIC')) {
-            metaTags['APIC'] = [];
-          }
-          metaTags['APIC'].add(apic);
+          
+          metaTags['APIC'] = apic;
+          metaTags['APIC_FRAMES'].add(apic);
         } else if (frames_db[latin1.decode(frameName)] == FRAMESv2_3['USLT']) {
           final frame = _MP3FrameParser(frameContent);
           frame.readEncoding();
